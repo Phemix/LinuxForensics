@@ -7,11 +7,10 @@ version="version 0.982"
 usage () 
 { 
 echo -e "\n\e[00;31m#########################################################\e[00m" 
-echo -e "\e[00;31m#\e[00m" "\e[00;33mLocal Linux Enumeration & Privilege Escalation Script\e[00m" "\e[00;31m#\e[00m"
+echo -e "\e[00;31m#\e[00m" "\e[00;33mLocal Linux Enumeration & IR Script\e[00m" "\e[00;31m#\e[00m"
 echo -e "\e[00;31m#########################################################\e[00m"
-echo -e "\e[00;33m# www.rebootuser.com | @rebootuser \e[00m"
 echo -e "\e[00;33m# $version\e[00m\n"
-echo -e "\e[00;33m# Example: ./LinEnum.sh -k keyword -r report -e /tmp/ -t \e[00m\n"
+echo -e "\e[00;33m# Example: ./EnumerationScript.sh -k keyword -r report -e /tmp/ -t \e[00m\n"
 
 		echo "OPTIONS:"
 		echo "-k	Enter keyword"
@@ -71,7 +70,7 @@ if [ "$sudopass" ]; then
   echo 
 fi
 
-who=`whoami 1>./whoami.txt`  2>/dev/null 
+who=`whoami 1>$export/server/whoami.txt`  2>/dev/null 
 echo -e "\n" 
 
 echo -e "\e[00;33mScan started at:"; date 
