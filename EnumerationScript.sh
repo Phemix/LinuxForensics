@@ -61,7 +61,7 @@ sleep 2
 
 if [ "$export" ]; then
   mkdir $export 2>/dev/null
-  format=$export/LinEnum-export-`date +"%d-%m-%y"`
+  format=$export/LinuxIR-Enumeration-FIleExports-`date +"%d-%m-%y"`
   mkdir $format 2>/dev/null
 fi
 
@@ -71,7 +71,7 @@ if [ "$sudopass" ]; then
   echo 
 fi
 
-who=`whoami` 2>/dev/null 
+who=`whoami 1>./whoami.txt`  2>/dev/null 
 echo -e "\n" 
 
 echo -e "\e[00;33mScan started at:"; date 
