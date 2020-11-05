@@ -70,7 +70,12 @@ if [ "$sudopass" ]; then
   echo 
 fi
 
-who=`whoami 1>$export/server/whoami.txt`  2>/dev/null 
+#create collection folder for enumeration data
+today=$(date +"%m_%d_%Y")
+host=$(hostname)
+mkdir Linux-IR-$today-$host
+
+who=`whoami 1>"Linux-IR-$today-$host"/whoami.txt`  2>/dev/null 
 echo -e "\n" 
 
 echo -e "\e[00;33mScan started at:"; date 
@@ -85,13 +90,13 @@ system_info()
 echo -e "\e[00;33m### SYSTEM ##############################################\e[00m" 
 
 #basic kernel info
-unameinfo=`uname -a 2>/dev/null`
+unameinfo=`uname -a 1>Linux-IR-$today-$host/systeminfo.txt 2>/dev/null`
 if [ "$unameinfo" ]; then
   echo -e "\e[00;31m[-] Kernel information:\e[00m\n$unameinfo" 
   echo -e "\n" 
 fi
 
-procver=`cat /proc/version 2>/dev/null`
+procver=`cat /proc/version 1>Linux-IR-$today-$host/version.txt 2>/dev/null`
 if [ "$procver" ]; then
   echo -e "\e[00;31m[-] Kernel information (continued):\e[00m\n$procver" 
   echo -e "\n" 
