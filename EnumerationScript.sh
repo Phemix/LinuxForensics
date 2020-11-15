@@ -1,5 +1,5 @@
 #!/bin/bash
-#A script to enumerate local information from a Linux host
+#A script to collect artifacts from a Linux host
 version="version 0.982"
 #@rebootuser
 
@@ -7,7 +7,7 @@ version="version 0.982"
 usage () 
 { 
 echo -e "\n\e[00;31m#########################################################\e[00m" 
-echo -e "\e[00;31m#\e[00m" "\e[00;33mLocal Linux Enumeration & IR Script\e[00m" "\e[00;31m#\e[00m"
+echo -e "\e[00;31m#\e[00m" "\e[00;33mUNFI DFIR Linux Collection Script\e[00m" "\e[00;31m#\e[00m"
 echo -e "\e[00;31m#########################################################\e[00m"
 echo -e "\e[00;33m# $version\e[00m\n"
 echo -e "\e[00;33m# Example: ./EnumerationScript.sh -k keyword -r report -e /tmp/ -t \e[00m\n"
@@ -27,16 +27,14 @@ echo -e "\e[00;31m#########################################################\e[00
 header()
 {
 echo -e "\n\e[00;31m#########################################################\e[00m" 
-echo -e "\e[00;31m#\e[00m" "\e[00;33mLocal Linux Enumeration & Privilege Escalation Script\e[00m" "\e[00;31m#\e[00m" 
-echo -e "\e[00;31m#########################################################\e[00m" 
-echo -e "\e[00;33m# www.rebootuser.com\e[00m" 
-echo -e "\e[00;33m# $version\e[00m\n" 
+echo -e "\e[00;31m#\e[00m" "\e[00;33mUNFI Linux DFIR Artifacts Collection Script\e[00m" "\e[00;31m#\e[00m" 
+echo -e "\e[00;31m#########################################################\e[00m"  
 
 }
 
 debug_info()
 {
-echo "[-] Debug Info" 
+echo "[-] Debug Information" 
 
 if [ "$keyword" ]; then 
 	echo "[+] Searching for the keyword $keyword in conf, php, ini and log files" 
@@ -70,104 +68,117 @@ if [ "$sudopass" ]; then
   echo 
 fi
 
+#remove any pre-existing collection folder
+rm -r Linux-IR*
+
+
 #create collection folder for enumeration data
 today=$(date +"%m_%d_%Y")
 host=$(hostname)
 mkdir Linux-IR-$today-$host
 
-who=`whoami 1>"Linux-IR-$today-$host"/whoami.txt`  2>/dev/null 
-echo -e "\n" 
 
-echo -e "\e[00;33mScan started at:"; date 
+
+who=`whoami  2>/dev/null`
+echo -e "\nMake sure you are running as root or admin user"
+echo -e "YOU ARE RUNNING THIS SCRIPT AS $who"
+
+
+echo -e "\e\n[00;33mCollection started at:"; date 
 echo -e "\e[00m\n" 
 }
 
 # useful binaries (thanks to https://gtfobins.github.io/)
 binarylist='aria2c\|arp\|ash\|awk\|base64\|bash\|busybox\|cat\|chmod\|chown\|cp\|csh\|curl\|cut\|dash\|date\|dd\|diff\|dmsetup\|docker\|ed\|emacs\|env\|expand\|expect\|file\|find\|flock\|fmt\|fold\|ftp\|gawk\|gdb\|gimp\|git\|grep\|head\|ht\|iftop\|ionice\|ip$\|irb\|jjs\|jq\|jrunscript\|ksh\|ld.so\|ldconfig\|less\|logsave\|lua\|make\|man\|mawk\|more\|mv\|mysql\|nano\|nawk\|nc\|netcat\|nice\|nl\|nmap\|node\|od\|openssl\|perl\|pg\|php\|pic\|pico\|python\|readelf\|rlwrap\|rpm\|rpmquery\|rsync\|ruby\|run-parts\|rvim\|scp\|script\|sed\|setarch\|sftp\|sh\|shuf\|socat\|sort\|sqlite3\|ssh$\|start-stop-daemon\|stdbuf\|strace\|systemctl\|tail\|tar\|taskset\|tclsh\|tee\|telnet\|tftp\|time\|timeout\|ul\|unexpand\|uniq\|unshare\|vi\|vim\|watch\|wget\|wish\|xargs\|xxd\|zip\|zsh'
 
+#SYSTEM INFORMATION CODE
 system_info()
 {
-echo -e "\e[00;33m### SYSTEM ##############################################\e[00m" 
+echo -e "\e[00;33m### SYSTEM INFORMATION ##############################################\e[00m" 
 
 #basic kernel info
-unameinfo=`uname -a 1>Linux-IR-$today-$host/systeminfo.txt 2>/dev/null`
+mkdir Linux-IR-$today-$host/system_information
+unameinfo=`uname -a  2>/dev/null`
 if [ "$unameinfo" ]; then
-  echo -e "\e[00;31m[-] Kernel information:\e[00m\n$unameinfo" 
+  echo -e "\e[00;31m[-] Kernel information:\e[00m\n$unameinfo" | tee Linux-IR-$today-$host/system_information/kernel_information.txt
   echo -e "\n" 
 fi
 
-procver=`cat /proc/version 1>Linux-IR-$today-$host/version.txt 2>/dev/null`
+procver=`cat /proc/version  2>/dev/null`
 if [ "$procver" ]; then
-  echo -e "\e[00;31m[-] Kernel information (continued):\e[00m\n$procver" 
+  echo -e "\e[00;31m[-] Kernel information (continued):\e[00m\n$procver" | tee Linux-IR-$today-$host/system_information/kernel_information.txt
   echo -e "\n" 
 fi
 
 #search all *-release files for version info
-release=`cat /etc/*-release 2>/dev/null`
+release=`cat /etc/*-release  2>/dev/null`
 if [ "$release" ]; then
-  echo -e "\e[00;31m[-] Specific release information:\e[00m\n$release" 
+  echo -e "\e[00;31m[-] Specific release information:\e[00m\n$release" | tee Linux-IR-$today-$host/system_information/release_information.txt
   echo -e "\n" 
 fi
 
 #target hostname info
-hostnamed=`hostname 2>/dev/null`
+hostnamed=`hostname  2>/dev/null`
 if [ "$hostnamed" ]; then
-  echo -e "\e[00;31m[-] Hostname:\e[00m\n$hostnamed" 
+  echo -e "\e[00;31m[-] Hostname:\e[00m\n$hostnamed" | tee Linux-IR-$today-$host/system_information/hostname.txt
   echo -e "\n" 
 fi
 }
 
+
+#USER INFORMATION CODE
 user_info()
 {
 echo -e "\e[00;33m### USER/GROUP ##########################################\e[00m" 
+mkdir Linux-IR-$today-$host/user_information
 
 #current user details
-currusr=`id 2>/dev/null`
+currusr=`id   2>/dev/null`
 if [ "$currusr" ]; then
-  echo -e "\e[00;31m[-] Current user/group info:\e[00m\n$currusr" 
+  echo -e "\e[00;31m[-] Current user/group info:\e[00m\n$currusr" | tee Linux-IR-$today-$host/user_information/current_user.txt
   echo -e "\n"
 fi
 
 #last logged on user information
-lastlogedonusrs=`lastlog 2>/dev/null |grep -v "Never" 2>/dev/null`
+lastlogedonusrs=`lastlog 2>/dev/null |grep -v "Never"  2>/dev/null`
 if [ "$lastlogedonusrs" ]; then
-  echo -e "\e[00;31m[-] Users that have previously logged onto the system:\e[00m\n$lastlogedonusrs" 
+  echo -e "\e[00;31m[-] Users that have previously logged onto the system:\e[00m\n$lastlogedonusrs" | tee Linux-IR-$today-$host/user_information/last_loggedon_users.txt
   echo -e "\n" 
 fi
 
 #who else is logged on
-loggedonusrs=`w 2>/dev/null`
+loggedonusrs=`w  2>/dev/null`
 if [ "$loggedonusrs" ]; then
-  echo -e "\e[00;31m[-] Who else is logged on:\e[00m\n$loggedonusrs" 
+  echo -e "\e[00;31m[-] Who else is logged on:\e[00m\n$loggedonusrs" | tee Linux-IR-$today-$host/user_information/currently_loggedon_users.txt
   echo -e "\n"
 fi
 
 #lists all id's and respective group(s)
-grpinfo=`for i in $(cut -d":" -f1 /etc/passwd 2>/dev/null);do id $i;done 2>/dev/null`
+grpinfo=`for i in $(cut -d":" -f1 /etc/passwd 2>/dev/null);do id $i;done  2>/dev/null`
 if [ "$grpinfo" ]; then
-  echo -e "\e[00;31m[-] Group memberships:\e[00m\n$grpinfo"
+  echo -e "\e[00;31m[-] Group memberships:\e[00m\n$groupinfo" | tee Linux-IR-$today-$host/user_information/group_memberships.txt
   echo -e "\n"
 fi
 
-#added by phackt - look for adm group (thanks patrick)
-adm_users=$(echo -e "$grpinfo" | grep "(adm)")
+#find admin users
+adm_users=$(echo -e "$grpinfo" | grep "(adm)") 
 if [[ ! -z $adm_users ]];
   then
-    echo -e "\e[00;31m[-] It looks like we have some admin users:\e[00m\n$adm_users"
+    echo -e "\e[00;31m[-] Admin users:\e[00m\n$adm_users" | tee Linux-IR-$today-$host/user_information/admin_users.txt
     echo -e "\n"
 fi
 
 #checks to see if any hashes are stored in /etc/passwd (depreciated  *nix storage method)
 hashesinpasswd=`grep -v '^[^:]*:[x]' /etc/passwd 2>/dev/null`
 if [ "$hashesinpasswd" ]; then
-  echo -e "\e[00;33m[+] It looks like we have password hashes in /etc/passwd!\e[00m\n$hashesinpasswd" 
+  echo -e "\e[00;33m[+] password hashes in /etc/passwd!\e[00m\n$hashesinpasswd" | tee Linux-IR-$today-$host/user_information/etc_passwd_hashes.txt
   echo -e "\n"
 fi
 
 #contents of /etc/passwd
 readpasswd=`cat /etc/passwd 2>/dev/null`
 if [ "$readpasswd" ]; then
-  echo -e "\e[00;31m[-] Contents of /etc/passwd:\e[00m\n$readpasswd" 
+  echo -e "\e[00;31m[-] Contents of /etc/passwd:\e[00m\n$readpasswd" | tee Linux-IR-$today-$host/user_information/etc_passwd_content.txt
   echo -e "\n"
 fi
 
@@ -179,7 +190,7 @@ fi
 #checks to see if the shadow file can be read
 readshadow=`cat /etc/shadow 2>/dev/null`
 if [ "$readshadow" ]; then
-  echo -e "\e[00;33m[+] We can read the shadow file!\e[00m\n$readshadow" 
+  echo -e "\e[00;33m[+] Shadow file contents\e[00m\n$readshadow" | tee Linux-IR-$today-$host/user_information/etc_shadow.txt
   echo -e "\n"
 fi
 
@@ -191,7 +202,7 @@ fi
 #checks to see if /etc/master.passwd can be read - BSD 'shadow' variant
 readmasterpasswd=`cat /etc/master.passwd 2>/dev/null`
 if [ "$readmasterpasswd" ]; then
-  echo -e "\e[00;33m[+] We can read the master.passwd file!\e[00m\n$readmasterpasswd" 
+  echo -e "\e[00;33m[+] master.passwd file contents\e[00m\n$readmasterpasswd" | tee Linux-IR-$today-$host/user_information/master_passwd.txt
   echo -e "\n"
 fi
 
@@ -203,7 +214,7 @@ fi
 #all root accounts (uid 0)
 superman=`grep -v -E "^#" /etc/passwd 2>/dev/null| awk -F: '$3 == 0 { print $1}' 2>/dev/null`
 if [ "$superman" ]; then
-  echo -e "\e[00;31m[-] Super user account(s):\e[00m\n$superman"
+  echo -e "\e[00;31m[-] Super user account(s):\e[00m\n$superman" | tee Linux-IR-$today-$host/user_information/root_accts.txt
   echo -e "\n"
 fi
 

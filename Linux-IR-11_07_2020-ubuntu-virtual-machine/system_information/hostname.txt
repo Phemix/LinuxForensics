@@ -1,0 +1,2 @@
+[00;31m[-] Hostname:[00m
+ubuntu-virtual-machine

@@ -1,0 +1,2 @@
+[00;31m[-] Super user account(s):[00m
+root
