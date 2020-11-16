@@ -98,29 +98,29 @@ echo -e "\e[00;33m### SYSTEM INFORMATION #######################################
 
 #basic kernel info
 mkdir Linux-IR-$today-$host/system_information
-unameinfo=`uname -a  2>/dev/null`
+unameinfo=`uname -a  | tee Linux-IR-$today-$host/system_information/kernel_information.txt 2>/dev/null`
 if [ "$unameinfo" ]; then
-  echo -e "\e[00;31m[-] Kernel information:\e[00m\n$unameinfo" | tee Linux-IR-$today-$host/system_information/kernel_information.txt
+  echo -e "\e[00;31m[-] Kernel information:\e[00m\n$unameinfo" 
   echo -e "\n" 
 fi
 
-procver=`cat /proc/version  2>/dev/null`
+procver=`cat /proc/version | tee Linux-IR-$today-$host/system_information/version_information.txt 2>/dev/null`
 if [ "$procver" ]; then
-  echo -e "\e[00;31m[-] Kernel information (continued):\e[00m\n$procver" | tee Linux-IR-$today-$host/system_information/kernel_information.txt
+  echo -e "\e[00;31m[-] Kernel information (continued):\e[00m\n$procver" 
   echo -e "\n" 
 fi
 
 #search all *-release files for version info
-release=`cat /etc/*-release  2>/dev/null`
+release=`cat /etc/*-release  | tee Linux-IR-$today-$host/system_information/release_information.txt 2>/dev/null`
 if [ "$release" ]; then
-  echo -e "\e[00;31m[-] Specific release information:\e[00m\n$release" | tee Linux-IR-$today-$host/system_information/release_information.txt
+  echo -e "\e[00;31m[-] Specific release information:\e[00m\n$release" 
   echo -e "\n" 
 fi
 
 #target hostname info
-hostnamed=`hostname  2>/dev/null`
+hostnamed=`hostname | tee Linux-IR-$today-$host/system_information/hostname.txt 2>/dev/null`
 if [ "$hostnamed" ]; then
-  echo -e "\e[00;31m[-] Hostname:\e[00m\n$hostnamed" | tee Linux-IR-$today-$host/system_information/hostname.txt
+  echo -e "\e[00;31m[-] Hostname:\e[00m\n$hostnamed" 
   echo -e "\n" 
 fi
 }
@@ -133,52 +133,52 @@ echo -e "\e[00;33m### USER/GROUP ##########################################\e[00
 mkdir Linux-IR-$today-$host/user_information
 
 #current user details
-currusr=`id   2>/dev/null`
+currusr=`id  | tee Linux-IR-$today-$host/user_information/current_user.txt 2>/dev/null`
 if [ "$currusr" ]; then
-  echo -e "\e[00;31m[-] Current user/group info:\e[00m\n$currusr" | tee Linux-IR-$today-$host/user_information/current_user.txt
+  echo -e "\e[00;31m[-] Current user/group info:\e[00m\n$currusr" 
   echo -e "\n"
 fi
 
 #last logged on user information
-lastlogedonusrs=`lastlog 2>/dev/null |grep -v "Never"  2>/dev/null`
+lastlogedonusrs=`lastlog | tee Linux-IR-$today-$host/user_information/last_loggedon_users.txt 2>/dev/null |grep -v "Never"  2>/dev/null`
 if [ "$lastlogedonusrs" ]; then
-  echo -e "\e[00;31m[-] Users that have previously logged onto the system:\e[00m\n$lastlogedonusrs" | tee Linux-IR-$today-$host/user_information/last_loggedon_users.txt
+  echo -e "\e[00;31m[-] Users that have previously logged onto the system:\e[00m\n$lastlogedonusrs" 
   echo -e "\n" 
 fi
 
 #who else is logged on
-loggedonusrs=`w  2>/dev/null`
+loggedonusrs=`w  | tee Linux-IR-$today-$host/user_information/currently_loggedon_users.txt 2>/dev/null`
 if [ "$loggedonusrs" ]; then
-  echo -e "\e[00;31m[-] Who else is logged on:\e[00m\n$loggedonusrs" | tee Linux-IR-$today-$host/user_information/currently_loggedon_users.txt
+  echo -e "\e[00;31m[-] Who else is logged on:\e[00m\n$loggedonusrs" 
   echo -e "\n"
 fi
 
 #lists all id's and respective group(s)
-grpinfo=`for i in $(cut -d":" -f1 /etc/passwd 2>/dev/null);do id $i;done  2>/dev/null`
+grpinfo=`for i in $(cut -d":" -f1 /etc/passwd | tee Linux-IR-$today-$host/user_information/group_memberships.txt 2>/dev/null);do id $i;done  2>/dev/null`
 if [ "$grpinfo" ]; then
-  echo -e "\e[00;31m[-] Group memberships:\e[00m\n$groupinfo" | tee Linux-IR-$today-$host/user_information/group_memberships.txt
+  echo -e "\e[00;31m[-] Group memberships:\e[00m\n$groupinfo" 
   echo -e "\n"
 fi
 
 #find admin users
-adm_users=$(echo -e "$grpinfo" | grep "(adm)") 
+adm_users=$(echo -e "$grpinfo" | grep "(adm)") | tee Linux-IR-$today-$host/user_information/admin_users.txt
 if [[ ! -z $adm_users ]];
   then
-    echo -e "\e[00;31m[-] Admin users:\e[00m\n$adm_users" | tee Linux-IR-$today-$host/user_information/admin_users.txt
+    echo -e "\e[00;31m[-] Admin users:\e[00m\n$adm_users" 
     echo -e "\n"
 fi
 
 #checks to see if any hashes are stored in /etc/passwd (depreciated  *nix storage method)
-hashesinpasswd=`grep -v '^[^:]*:[x]' /etc/passwd 2>/dev/null`
+hashesinpasswd=`grep -v '^[^:]*:[x]' /etc/passwd | tee Linux-IR-$today-$host/user_information/etc_passwd_hashes.txt 2>/dev/null`
 if [ "$hashesinpasswd" ]; then
-  echo -e "\e[00;33m[+] password hashes in /etc/passwd!\e[00m\n$hashesinpasswd" | tee Linux-IR-$today-$host/user_information/etc_passwd_hashes.txt
+  echo -e "\e[00;33m[+] password hashes in /etc/passwd!\e[00m\n$hashesinpasswd" 
   echo -e "\n"
 fi
 
 #contents of /etc/passwd
-readpasswd=`cat /etc/passwd 2>/dev/null`
+readpasswd=`cat /etc/passwd | tee Linux-IR-$today-$host/user_information/etc_passwd_content.txt 2>/dev/null`
 if [ "$readpasswd" ]; then
-  echo -e "\e[00;31m[-] Contents of /etc/passwd:\e[00m\n$readpasswd" | tee Linux-IR-$today-$host/user_information/etc_passwd_content.txt
+  echo -e "\e[00;31m[-] Contents of /etc/passwd:\e[00m\n$readpasswd" 
   echo -e "\n"
 fi
 
@@ -188,9 +188,9 @@ if [ "$export" ] && [ "$readpasswd" ]; then
 fi
 
 #checks to see if the shadow file can be read
-readshadow=`cat /etc/shadow 2>/dev/null`
+readshadow=`cat /etc/shadow | tee Linux-IR-$today-$host/user_information/etc_shadow.txt 2>/dev/null`
 if [ "$readshadow" ]; then
-  echo -e "\e[00;33m[+] Shadow file contents\e[00m\n$readshadow" | tee Linux-IR-$today-$host/user_information/etc_shadow.txt
+  echo -e "\e[00;33m[+] Shadow file contents\e[00m\n$readshadow" 
   echo -e "\n"
 fi
 
@@ -200,9 +200,9 @@ if [ "$export" ] && [ "$readshadow" ]; then
 fi
 
 #checks to see if /etc/master.passwd can be read - BSD 'shadow' variant
-readmasterpasswd=`cat /etc/master.passwd 2>/dev/null`
+readmasterpasswd=`cat /etc/master.passwd | tee Linux-IR-$today-$host/user_information/master_passwd.txt 2>/dev/null`
 if [ "$readmasterpasswd" ]; then
-  echo -e "\e[00;33m[+] master.passwd file contents\e[00m\n$readmasterpasswd" | tee Linux-IR-$today-$host/user_information/master_passwd.txt
+  echo -e "\e[00;33m[+] master.passwd file contents\e[00m\n$readmasterpasswd" 
   echo -e "\n"
 fi
 
@@ -212,14 +212,14 @@ if [ "$export" ] && [ "$readmasterpasswd" ]; then
 fi
 
 #all root accounts (uid 0)
-superman=`grep -v -E "^#" /etc/passwd 2>/dev/null| awk -F: '$3 == 0 { print $1}' 2>/dev/null`
+superman=`grep -v -E "^#" /etc/passwd 2>/dev/null| awk -F: '$3 == 0 { print $1}' | tee Linux-IR-$today-$host/user_information/root_accts.txt
+  echo -e "\n" 2>/dev/null`
 if [ "$superman" ]; then
-  echo -e "\e[00;31m[-] Super user account(s):\e[00m\n$superman" | tee Linux-IR-$today-$host/user_information/root_accts.txt
-  echo -e "\n"
+  echo -e "\e[00;31m[-] Super user account(s):\e[00m\n$superman" 
 fi
 
-#pull out vital sudoers info
-sudoers=`grep -v -e '^$' /etc/sudoers 2>/dev/null |grep -v "#" 2>/dev/null`
+#important sudoers
+sudoers=`grep -v -e '^$' /etc/sudoers 2>/dev/null |grep -v "#" | tee Linux-IR-$today-$host/user_information/important_sudoers.txt 2>/dev/null`
 if [ "$sudoers" ]; then
   echo -e "\e[00;31m[-] Sudoers configuration (condensed):\e[00m$sudoers"
   echo -e "\n"
@@ -230,8 +230,8 @@ if [ "$export" ] && [ "$sudoers" ]; then
   cp /etc/sudoers $format/etc-export/sudoers 2>/dev/null
 fi
 
-#can we sudo without supplying a password
-sudoperms=`echo '' | sudo -S -l -k 2>/dev/null`
+#check if sudo works without supplying a password
+sudoperms=`echo '' | sudo -S -l -k | tee Linux-IR-$today-$host/user_information/sudoers_without_password.txt 2>/dev/null`
 if [ "$sudoperms" ]; then
   echo -e "\e[00;33m[+] We can sudo without supplying a password!\e[00m\n$sudoperms" 
   echo -e "\n"
@@ -242,7 +242,7 @@ if [ "$sudopass" ]; then
     if [ "$sudoperms" ]; then
       :
     else
-      sudoauth=`echo $userpassword | sudo -S -l -k 2>/dev/null`
+      sudoauth=`echo $userpassword | sudo -S -l -k | tee Linux-IR-$today-$host/user_information/sudoers_with_password.txt 2>/dev/null`
       if [ "$sudoauth" ]; then
         echo -e "\e[00;33m[+] We can sudo when supplying a password!\e[00m\n$sudoauth" 
         echo -e "\n"
@@ -255,7 +255,7 @@ if [ "$sudopass" ]; then
     if [ "$sudoperms" ]; then
       :
     else
-      sudopermscheck=`echo $userpassword | sudo -S -l -k 2>/dev/null | xargs -n 1 2>/dev/null|sed 's/,*$//g' 2>/dev/null | grep -w $binarylist 2>/dev/null`
+      sudopermscheck=`echo $userpassword | sudo -S -l -k 2>/dev/null | xargs -n 1 2>/dev/null|sed 's/,*$//g' 2>/dev/null | grep -w $binarylist | tee Linux-IR-$today-$host/user_information/sudoers_with_password.txt 2>/dev/null`
       if [ "$sudopermscheck" ]; then
         echo -e "\e[00;33m[-] Possible sudo pwnage!\e[00m\n$sudopermscheck" 
         echo -e "\n"
@@ -264,28 +264,28 @@ if [ "$sudopass" ]; then
 fi
 
 #known 'good' breakout binaries (cleaned to parse /etc/sudoers for comma separated values)
-sudopwnage=`echo '' | sudo -S -l -k 2>/dev/null | xargs -n 1 2>/dev/null | sed 's/,*$//g' 2>/dev/null | grep -w $binarylist 2>/dev/null`
+sudopwnage=`echo '' | sudo -S -l -k 2>/dev/null | xargs -n 1 2>/dev/null | sed 's/,*$//g' 2>/dev/null | grep -w $binarylist | tee Linux-IR-$today-$host/user_information/breakout_binaries.txt 2>/dev/null`
 if [ "$sudopwnage" ]; then
   echo -e "\e[00;33m[+] Possible sudo pwnage!\e[00m\n$sudopwnage" 
   echo -e "\n"
 fi
 
-#who has sudoed in the past
-whohasbeensudo=`find /home -name .sudo_as_admin_successful 2>/dev/null`
+#check past sudo usage
+whohasbeensudo=`find /home -name .sudo_as_admin_successful | tee Linux-IR-$today-$host/user_information/previous_sudo_users.txt 2>/dev/null`
 if [ "$whohasbeensudo" ]; then
   echo -e "\e[00;31m[-] Accounts that have recently used sudo:\e[00m\n$whohasbeensudo" 
   echo -e "\n"
 fi
 
 #checks to see if roots home directory is accessible
-rthmdir=`ls -ahl /root/ 2>/dev/null`
+rthmdir=`ls -ahl /root/ | tee Linux-IR-$today-$host/user_information/root_home_directory_read.txt 2>/dev/null`
 if [ "$rthmdir" ]; then
   echo -e "\e[00;33m[+] We can read root's home directory!\e[00m\n$rthmdir" 
   echo -e "\n"
 fi
 
 #displays /home directory permissions - check if any are lax
-homedirperms=`ls -ahl /home/ 2>/dev/null`
+homedirperms=`ls -ahl /home/ | tee Linux-IR-$today-$host/user_information/home_directory_permissions.txt 2>/dev/null`
 if [ "$homedirperms" ]; then
   echo -e "\e[00;31m[-] Are permissions on /home directories lax:\e[00m\n$homedirperms" 
   echo -e "\n"
@@ -293,7 +293,7 @@ fi
 
 #looks for files we can write to that don't belong to us
 if [ "$thorough" = "1" ]; then
-  grfilesall=`find / -writable ! -user \`whoami\` -type f ! -path "/proc/*" ! -path "/sys/*" -exec ls -al {} \; 2>/dev/null`
+  grfilesall=`find / -writable ! -user \`whoami\` -type f ! -path "/proc/*" ! -path "/sys/*" -exec ls -al {} \; | tee Linux-IR-$today-$host/user_information/files_not_owned_by_user_but _group_writeable.txt 2>/dev/null`
   if [ "$grfilesall" ]; then
     echo -e "\e[00;31m[-] Files not owned by user but writable by group:\e[00m\n$grfilesall" 
     echo -e "\n"
@@ -302,25 +302,25 @@ fi
 
 #looks for files that belong to us
 if [ "$thorough" = "1" ]; then
-  ourfilesall=`find / -user \`whoami\` -type f ! -path "/proc/*" ! -path "/sys/*" -exec ls -al {} \; 2>/dev/null`
+  ourfilesall=`find / -user \`whoami\` -type f ! -path "/proc/*" ! -path "/sys/*" -exec ls -al {} \; | tee Linux-IR-$today-$host/user_information/files_not_belonging_to_current_user.txt 2>/dev/null`
   if [ "$ourfilesall" ]; then
-    echo -e "\e[00;31m[-] Files owned by our user:\e[00m\n$ourfilesall"
+    echo -e "\e[00;31m[-] Files owned by our user:\e[00m\n$ourfilesall" 
     echo -e "\n"
   fi
 fi
 
 #looks for hidden files
 if [ "$thorough" = "1" ]; then
-  hiddenfiles=`find / -name ".*" -type f ! -path "/proc/*" ! -path "/sys/*" -exec ls -al {} \; 2>/dev/null`
+  hiddenfiles=`find / -name ".*" -type f ! -path "/proc/*" ! -path "/sys/*" -exec ls -al {} \; | tee Linux-IR-$today-$host/user_information/hidden_files.txt 2>/dev/null`
   if [ "$hiddenfiles" ]; then
-    echo -e "\e[00;31m[-] Hidden files:\e[00m\n$hiddenfiles"
+    echo -e "\e[00;31m[-] Hidden files:\e[00m\n$hiddenfiles" 
     echo -e "\n"
   fi
 fi
 
 #looks for world-reabable files within /home - depending on number of /home dirs & files, this can take some time so is only 'activated' with thorough scanning switch
 if [ "$thorough" = "1" ]; then
-wrfileshm=`find /home/ -perm -4 -type f -exec ls -al {} \; 2>/dev/null`
+wrfileshm=`find /home/ -perm -4 -type f -exec ls -al {} \; | tee Linux-IR-$today-$host/user_information/globally_readable_files.txt 2>/dev/null`
 	if [ "$wrfileshm" ]; then
 		echo -e "\e[00;31m[-] World-readable files within /home:\e[00m\n$wrfileshm" 
 		echo -e "\n"
@@ -336,7 +336,7 @@ fi
 
 #lists current user's home directory contents
 if [ "$thorough" = "1" ]; then
-homedircontents=`ls -ahl ~ 2>/dev/null`
+homedircontents=`ls -ahl ~ | tee Linux-IR-$today-$host/user_information/home_directory_contents.txt 2>/dev/null`
 	if [ "$homedircontents" ] ; then
 		echo -e "\e[00;31m[-] Home directory contents:\e[00m\n$homedircontents" 
 		echo -e "\n" 
@@ -345,7 +345,7 @@ fi
 
 #checks for if various ssh files are accessible - this can take some time so is only 'activated' with thorough scanning switch
 if [ "$thorough" = "1" ]; then
-sshfiles=`find / \( -name "id_dsa*" -o -name "id_rsa*" -o -name "known_hosts" -o -name "authorized_hosts" -o -name "authorized_keys" \) -exec ls -la {} 2>/dev/null \;`
+sshfiles=`find / \( -name "id_dsa*" -o -name "id_rsa*" -o -name "known_hosts" -o -name "authorized_hosts" -o -name "authorized_keys" \) -exec ls -la {} | tee Linux-IR-$today-$host/user_information/accessible_SSH_files.txt 2>/dev/null \;`
 	if [ "$sshfiles" ]; then
 		echo -e "\e[00;31m[-] SSH keys/host information found in the following locations:\e[00m\n$sshfiles" 
 		echo -e "\n"
@@ -359,27 +359,30 @@ if [ "$thorough" = "1" ]; then
 	fi
 fi
 
-#is root permitted to login via ssh
-sshrootlogin=`grep "PermitRootLogin " /etc/ssh/sshd_config 2>/dev/null | grep -v "#" | awk '{print  $2}'`
+#root permitted to login via ssh
+sshrootlogin=`grep "PermitRootLogin " /etc/ssh/sshd_config 2>/dev/null | grep -v "#" | awk '{print  $2}' | tee Linux-IR-$today-$host/user_information/root_ssh_login.txt`
 if [ "$sshrootlogin" = "yes" ]; then
   echo -e "\e[00;31m[-] Root is allowed to login via SSH:\e[00m" ; grep "PermitRootLogin " /etc/ssh/sshd_config 2>/dev/null | grep -v "#" 
   echo -e "\n"
 fi
 }
 
+
+#ENVIRONMENTAL VARIABLE CODE
 environmental_info()
 {
 echo -e "\e[00;33m### ENVIRONMENTAL #######################################\e[00m" 
+mkdir Linux-IR-$today-$host/environment_artifacts
 
 #env information
-envinfo=`env 2>/dev/null | grep -v 'LS_COLORS' 2>/dev/null`
+envinfo=`env 2>/dev/null | grep -v 'LS_COLORS' | tee Linux-IR-$today-$host/environment_artifacts/env_var.txt 2>/dev/null`
 if [ "$envinfo" ]; then
   echo -e "\e[00;31m[-] Environment information:\e[00m\n$envinfo" 
   echo -e "\n"
 fi
 
 #check if selinux is enabled
-sestatus=`sestatus 2>/dev/null`
+sestatus=`sestatus | tee Linux-IR-$today-$host/environment_artifacts/selinux.txt 2>/dev/null`
 if [ "$sestatus" ]; then
   echo -e "\e[00;31m[-] SELinux seems to be present:\e[00m\n$sestatus"
   echo -e "\n"
@@ -388,7 +391,7 @@ fi
 #phackt
 
 #current path configuration
-pathinfo=`echo $PATH 2>/dev/null`
+pathinfo=`echo $PATH | tee Linux-IR-$today-$host/environment_artifacts/env_path.txt 2>/dev/null`
 if [ "$pathinfo" ]; then
   pathswriteable=`ls -ld $(echo $PATH | tr ":" " ")`
   echo -e "\e[00;31m[-] Path information:\e[00m\n$pathinfo" 
@@ -397,28 +400,28 @@ if [ "$pathinfo" ]; then
 fi
 
 #lists available shells
-shellinfo=`cat /etc/shells 2>/dev/null`
+shellinfo=`cat /etc/shells | tee Linux-IR-$today-$host/environment_artifacts/available_shells.txt 2>/dev/null`
 if [ "$shellinfo" ]; then
   echo -e "\e[00;31m[-] Available shells:\e[00m\n$shellinfo" 
   echo -e "\n"
 fi
 
 #current umask value with both octal and symbolic output
-umaskvalue=`umask -S 2>/dev/null & umask 2>/dev/null`
+umaskvalue=`umask -S | tee Linux-IR-$today-$host/environment_artifacts/umask.txt 2>/dev/null & umask | tee Linux-IR-$today-$host/environment_artifacts/umask2.txt 2>/dev/null`
 if [ "$umaskvalue" ]; then
   echo -e "\e[00;31m[-] Current umask value:\e[00m\n$umaskvalue" 
   echo -e "\n"
 fi
 
 #umask value as in /etc/login.defs
-umaskdef=`grep -i "^UMASK" /etc/login.defs 2>/dev/null`
+umaskdef=`grep -i "^UMASK" /etc/login.defs | tee Linux-IR-$today-$host/environment_artifacts/umask_login_def.txt 2>/dev/null`
 if [ "$umaskdef" ]; then
   echo -e "\e[00;31m[-] umask value as specified in /etc/login.defs:\e[00m\n$umaskdef" 
   echo -e "\n"
 fi
 
 #password policy information as stored in /etc/login.defs
-logindefs=`grep "^PASS_MAX_DAYS\|^PASS_MIN_DAYS\|^PASS_WARN_AGE\|^ENCRYPT_METHOD" /etc/login.defs 2>/dev/null`
+logindefs=`grep "^PASS_MAX_DAYS\|^PASS_MIN_DAYS\|^PASS_WARN_AGE\|^ENCRYPT_METHOD" /etc/login.defs grep -i "^UMASK" /etc/login.defs | tee Linux-IR-$today-$host/environment_artifacts/password_policy_login_def.txt 2>/dev/null`
 if [ "$logindefs" ]; then
   echo -e "\e[00;31m[-] Password and storage information:\e[00m\n$logindefs" 
   echo -e "\n"
@@ -430,60 +433,59 @@ if [ "$export" ] && [ "$logindefs" ]; then
 fi
 }
 
+
+
 job_info()
 {
 echo -e "\e[00;33m### JOBS/TASKS ##########################################\e[00m" 
+mkdir Linux-IR-$today-$host/persistence_artifacts
 
 #are there any cron jobs configured
-cronjobs=`ls -la /etc/cron* 2>/dev/null`
+cronjobs=`ls -la /etc/cron* | tee Linux-IR-$today-$host/persistence_artifacts/system_cron_jobs.txt  2>/dev/null`
 if [ "$cronjobs" ]; then
   echo -e "\e[00;31m[-] Cron jobs:\e[00m\n$cronjobs" 
   echo -e "\n"
 fi
 
-#can we manipulate these jobs in any way
-cronjobwwperms=`find /etc/cron* -perm -0002 -type f -exec ls -la {} \; -exec cat {} 2>/dev/null \;`
-if [ "$cronjobwwperms" ]; then
-  echo -e "\e[00;33m[+] World-writable cron jobs and file contents:\e[00m\n$cronjobwwperms" 
-  echo -e "\n"
-fi
+
 
 #contab contents
-crontabvalue=`cat /etc/crontab 2>/dev/null`
+crontabvalue=`cat /etc/crontab | tee Linux-IR-$today-$host/persistence_artifacts/crontab_content.txt  2>/dev/null`
 if [ "$crontabvalue" ]; then
   echo -e "\e[00;31m[-] Crontab contents:\e[00m\n$crontabvalue" 
   echo -e "\n"
 fi
 
-crontabvar=`ls -la /var/spool/cron/crontabs 2>/dev/null`
+crontabvar=`ls -la /var/spool/cron/crontabs | tee Linux-IR-$today-$host/persistence_artifacts/crontab_content.txt 2>/dev/null`
 if [ "$crontabvar" ]; then
   echo -e "\e[00;31m[-] Anything interesting in /var/spool/cron/crontabs:\e[00m\n$crontabvar" 
   echo -e "\n"
 fi
 
-anacronjobs=`ls -la /etc/anacrontab 2>/dev/null; cat /etc/anacrontab 2>/dev/null`
+anacronjobs=`ls -la /etc/anacrontab | tee Linux-IR-$today-$host/persistence_artifacts/anacrontab_listing.txt 2>/dev/null; cat /etc/anacrontab | tee Linux-IR-$today-$host/persistence_artifacts/anacron_content.txt 2>/dev/null`
 if [ "$anacronjobs" ]; then
   echo -e "\e[00;31m[-] Anacron jobs and associated file permissions:\e[00m\n$anacronjobs" 
   echo -e "\n"
 fi
 
-anacrontab=`ls -la /var/spool/anacron 2>/dev/null`
+anacrontab=`ls -la /var/spool/anacron | tee Linux-IR-$today-$host/persistence_artifacts/anacron_job_listing.txt 2>/dev/null`
 if [ "$anacrontab" ]; then
   echo -e "\e[00;31m[-] When were jobs last executed (/var/spool/anacron contents):\e[00m\n$anacrontab" 
   echo -e "\n"
 fi
 
 #pull out account names from /etc/passwd and see if any users have associated cronjobs (priv command)
-cronother=`cut -d ":" -f 1 /etc/passwd | xargs -n1 crontab -l -u 2>/dev/null`
+cronother=`cut -d ":" -f 1 /etc/passwd | xargs -n1 crontab -l -u | tee Linux-IR-$today-$host/persistence_artifacts/cron_job_all_users.txt 2>/dev/null`
 if [ "$cronother" ]; then
   echo -e "\e[00;31m[-] Jobs held by all users:\e[00m\n$cronother" 
   echo -e "\n"
 fi
 
 # list systemd timers
+systemctl list-timers --all > Linux-IR-$today-$host/persistence_artifacts/systemd_timers.txt
 if [ "$thorough" = "1" ]; then
   # include inactive timers in thorough mode
-  systemdtimers="$(systemctl list-timers --all 2>/dev/null)"
+  systemdtimers="$(systemctl list-timers --all  2>/dev/null)"
   info=""
 else
   systemdtimers="$(systemctl list-timers 2>/dev/null |head -n -1 2>/dev/null)"
