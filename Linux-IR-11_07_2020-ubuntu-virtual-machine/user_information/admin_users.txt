@@ -1,3 +1,0 @@
-[00;31m[-] Admin users:[00m
-uid=104(syslog) gid=110(syslog) groups=110(syslog),4(adm)
-uid=1000(ubuntu) gid=1000(ubuntu) groups=1000(ubuntu),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),120(lpadmin),131(lxd),132(sambashare)

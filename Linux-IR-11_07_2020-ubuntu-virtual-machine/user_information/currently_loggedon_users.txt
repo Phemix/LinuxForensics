@@ -1,4 +1,0 @@
-[00;31m[-] Who else is logged on:[00m
- 00:36:18 up 5 days, 12:35,  1 user,  load average: 0.21, 0.15, 0.09
-USER     TTY      FROM             LOGIN@   IDLE   JCPU   PCPU WHAT
-ubuntu   :0       :0               30Oct20 ?xdm?   4:48m  0.04s /usr/lib/gdm3/gdm-x-session --run-script env GNOME_SHELL_SESSION_MODE=ubuntu /usr/bin/gnome-session --systemd --session=ubuntu

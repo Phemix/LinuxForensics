@@ -69,7 +69,8 @@ if [ "$sudopass" ]; then
 fi
 
 #remove any pre-existing collection folder
-rm -r Linux-IR*
+rm -r /tmp/Linux-IR*
+
 
 
 #create collection folder for enumeration data
@@ -154,7 +155,7 @@ if [ "$loggedonusrs" ]; then
 fi
 
 #lists all id's and respective group(s)
-grpinfo=`for i in $(cut -d":" -f1 /etc/passwd | tee /tmp/Linux-IR-$today-$host/user_information/group_memberships.txt 2>/dev/null);do id $i;done  2>/dev/null`
+grpinfo=`for i in $(cut -d":" -f1 /etc/passwd | tee /tmp/Linux-IR-$today-$host/user_information/groups.txt 2>/dev/null);do id $i;done  2>/dev/null`
 if [ "$grpinfo" ]; then
   echo -e "\e[00;31m[-] Group memberships:\e[00m\n$groupinfo" 
   echo -e "\n"
@@ -169,7 +170,7 @@ if [[ ! -z $adm_users ]];
 fi
 
 #checks to see if any hashes are stored in /etc/passwd (depreciated  *nix storage method)
-hashesinpasswd=`grep -v '^[^:]*:[x]' /etc/passwd | tee /tmp/Linux-IR-$today-$host/user_information/etc_passwd_hashes.txt 2>/dev/null`
+hashesinpasswd=`grep -v '^[^:]*:[x]' /etc/passwd | tee /tmp/Linux-IR-$today-$host/user_information/hashes_in_etc_passwd.txt 2>/dev/null`
 if [ "$hashesinpasswd" ]; then
   echo -e "\e[00;33m[+] password hashes in /etc/passwd!\e[00m\n$hashesinpasswd" 
   echo -e "\n"
@@ -293,7 +294,7 @@ fi
 
 #looks for files we can write to that don't belong to us
 if [ "$thorough" = "1" ]; then
-  grfilesall=`find / -writable ! -user \`whoami\` -type f ! -path "/proc/*" ! -path "/sys/*" -exec ls -al {} \; | tee /tmp/Linux-IR-$today-$host/user_information/files_not_owned_by_user_but _group_writeable.txt 2>/dev/null`
+  grfilesall=`find / -writable ! -user \`whoami\` -type f ! -path "/proc/*" ! -path "/sys/*" -exec ls -al {}  | tee /tmp/Linux-IR-$today-$host/user_information/files_not_owned_by_user_but_group_writeable.txt 2>/dev/null`
   if [ "$grfilesall" ]; then
     echo -e "\e[00;31m[-] Files not owned by user but writable by group:\e[00m\n$grfilesall" 
     echo -e "\n"
@@ -302,7 +303,7 @@ fi
 
 #looks for files that belong to us
 if [ "$thorough" = "1" ]; then
-  ourfilesall=`find / -user \`whoami\` -type f ! -path "/proc/*" ! -path "/sys/*" -exec ls -al {} \; | tee /tmp/Linux-IR-$today-$host/user_information/files_not_belonging_to_current_user.txt 2>/dev/null`
+  ourfilesall=`find / -user \`whoami\` -type f ! -path "/proc/*" ! -path "/sys/*" -exec ls -al {}  | tee /tmp/Linux-IR-$today-$host/user_information/files_not_belonging_to_current_user.txt 2>/dev/null`
   if [ "$ourfilesall" ]; then
     echo -e "\e[00;31m[-] Files owned by our user:\e[00m\n$ourfilesall" 
     echo -e "\n"
@@ -407,7 +408,7 @@ if [ "$shellinfo" ]; then
 fi
 
 #current umask value with both octal and symbolic output
-umaskvalue=`umask -S | tee /tmp/Linux-IR-$today-$host/environment_artifacts/umask.txt 2>/dev/null & umask | tee /tmp/Linux-IR-$today-$host/environment_artifacts/umask2.txt 2>/dev/null`
+umaskvalue=`umask -S | tee /tmp/Linux-IR-$today-$host/environment_artifacts/default_umask_octal.txt 2>/dev/null; umask >  /tmp/Linux-IR-$today-$host/environment_artifacts/default_umask.txt 2>/dev/null`
 if [ "$umaskvalue" ]; then
   echo -e "\e[00;31m[-] Current umask value:\e[00m\n$umaskvalue" 
   echo -e "\n"
@@ -462,7 +463,7 @@ if [ "$crontabvar" ]; then
   echo -e "\n"
 fi
 
-anacronjobs=`ls -la /etc/anacrontab | tee /tmp/Linux-IR-$today-$host/persistence_artifacts/anacrontab_listing.txt 2>/dev/null; cat /etc/anacrontab | tee /tmp/Linux-IR-$today-$host/persistence_artifacts/anacron_content.txt 2>/dev/null`
+anacronjobs=`ls -la /etc/anacrontab | tee /tmp/Linux-IR-$today-$host/persistence_artifacts/anacrontab_listing.txt 2>/dev/null; cat /etc/anacrontab | tee /tmp/Linux-IR-$today-$host/persistence_artifacts/anacron_config.txt 2>/dev/null`
 if [ "$anacronjobs" ]; then
   echo -e "\e[00;31m[-] Anacron jobs and associated file permissions:\e[00m\n$anacronjobs" 
   echo -e "\n"
@@ -549,7 +550,7 @@ if [ "$defroute" ]; then
 fi
 
 #default route configuration
-defrouteip=`ip r 2>/dev/null | grep default | tee /tmp/Linux-IR-$today-$host/networking_artifacts/route_info.txt `
+defrouteip=`ip r 2>/dev/null | grep default | tee /tmp/Linux-IR-$today-$host/networking_artifacts/route_info_from_ip.txt `
 if [ ! "$defroute" ] && [ "$defrouteip" ]; then
   echo -e "\e[00;31m[-] Default route:\e[00m\n$defrouteip" 
   echo -e "\n"
@@ -578,20 +579,21 @@ fi
 }
 
 
-
+# SERVICES CODE
 services_info()
 {
 echo -e "\e[00;33m### SERVICES #############################################\e[00m" 
+mkdir /tmp/Linux-IR-$today-$host/services_artifacts
 
 #running processes
-psaux=`ps aux 2>/dev/null`
+psaux=`ps aux  | tee /tmp/Linux-IR-$today-$host/services_artifacts/running_processes.txt 2>/dev/null`
 if [ "$psaux" ]; then
   echo -e "\e[00;31m[-] Running processes:\e[00m\n$psaux" 
   echo -e "\n"
 fi
 
 #lookup process binary path and permissisons
-procperm=`ps aux 2>/dev/null | awk '{print $11}'|xargs -r ls -la 2>/dev/null |awk '!x[$0]++' 2>/dev/null`
+procperm=`ps aux 2>/dev/null | awk '{print $11}'|xargs -r ls -la | tee /tmp/Linux-IR-$today-$host/services_artifacts/running_proceses_with_permissions.txt 2>/dev/null |awk '!x[$0]++' 2>/dev/null`
 if [ "$procperm" ]; then
   echo -e "\e[00;31m[-] Process binaries and associated permissions (from above list):\e[00m\n$procperm" 
   echo -e "\n"
@@ -616,7 +618,7 @@ if [ "$export" ] && [ "$inetdread" ]; then
 fi
 
 #very 'rough' command to extract associated binaries from inetd.conf & show permisisons of each
-inetdbinperms=`awk '{print $7}' /etc/inetd.conf 2>/dev/null |xargs -r ls -la 2>/dev/null`
+inetdbinperms=`awk '{print $7}' /etc/inetd.conf 2>/dev/null |xargs -r ls -la | tee /tmp/Linux-IR-$today-$host/services_artifacts/inetd_binary_perm.txt 2>/dev/null`
 if [ "$inetdbinperms" ]; then
   echo -e "\e[00;31m[-] The related inetd binary permissions:\e[00m\n$inetdbinperms" 
   echo -e "\n"
@@ -646,37 +648,26 @@ if [ "$xinetdbinperms" ]; then
   echo -e "\n"
 fi
 
-initdread=`ls -la /etc/init.d 2>/dev/null`
+initdread=`ls -la /etc/init.d | tee /tmp/Linux-IR-$today-$host/services_artifacts/init.d_binary_perm.txt 2>/dev/null`
 if [ "$initdread" ]; then
   echo -e "\e[00;31m[-] /etc/init.d/ binary permissions:\e[00m\n$initdread" 
   echo -e "\n"
 fi
 
 #init.d files NOT belonging to root!
-initdperms=`find /etc/init.d/ \! -uid 0 -type f 2>/dev/null |xargs -r ls -la 2>/dev/null`
+initdperms=`find /etc/init.d/ \! -uid 0 -type f 2>/dev/null |xargs -r ls -la 2>/dev/null | tee /tmp/Linux-IR-$today-$host/services_artifacts/non_root_init.d_files.txt`
 if [ "$initdperms" ]; then
   echo -e "\e[00;31m[-] /etc/init.d/ files not belonging to root:\e[00m\n$initdperms" 
   echo -e "\n"
 fi
 
-rcdread=`ls -la /etc/rc.d/init.d 2>/dev/null`
+rcdread=`ls -la /etc/rc.d/init.d 2>/dev/null | tee /tmp/Linux-IR-$today-$host/services_artifacts/init.d_files_binary_permissions.txt`
 if [ "$rcdread" ]; then
   echo -e "\e[00;31m[-] /etc/rc.d/init.d binary permissions:\e[00m\n$rcdread" 
   echo -e "\n"
 fi
 
-#init.d files NOT belonging to root!
-rcdperms=`find /etc/rc.d/init.d \! -uid 0 -type f 2>/dev/null |xargs -r ls -la 2>/dev/null`
-if [ "$rcdperms" ]; then
-  echo -e "\e[00;31m[-] /etc/rc.d/init.d files not belonging to root:\e[00m\n$rcdperms" 
-  echo -e "\n"
-fi
 
-usrrcdread=`ls -la /usr/local/etc/rc.d 2>/dev/null`
-if [ "$usrrcdread" ]; then
-  echo -e "\e[00;31m[-] /usr/local/etc/rc.d binary permissions:\e[00m\n$usrrcdread" 
-  echo -e "\n"
-fi
 
 #rc.d files NOT belonging to root!
 usrrcdperms=`find /usr/local/etc/rc.d \! -uid 0 -type f 2>/dev/null |xargs -r ls -la 2>/dev/null`
@@ -685,106 +676,98 @@ if [ "$usrrcdperms" ]; then
   echo -e "\n"
 fi
 
-initread=`ls -la /etc/init/ 2>/dev/null`
+initread=`ls -la /etc/init/ | tee /tmp/Linux-IR-$today-$host/services_artifacts/etc_init_upstart_config_permissions.txt 2>/dev/null`
 if [ "$initread" ]; then
   echo -e "\e[00;31m[-] /etc/init/ config file permissions:\e[00m\n$initread"
   echo -e "\n"
 fi
 
 # upstart scripts not belonging to root
-initperms=`find /etc/init \! -uid 0 -type f 2>/dev/null |xargs -r ls -la 2>/dev/null`
+initperms=`find /etc/init \! -uid 0 -type f 2>/dev/null |xargs -r ls -la 2>/dev/null | tee /tmp/Linux-IR-$today-$host/services_artifacts/upstart_scripts_not_root_related.txt`
 if [ "$initperms" ]; then
    echo -e "\e[00;31m[-] /etc/init/ config files not belonging to root:\e[00m\n$initperms"
    echo -e "\n"
 fi
 
-systemdread=`ls -lthR /lib/systemd/ 2>/dev/null`
+systemdread=`ls -lthR /lib/systemd/ 2>/dev/null | tee /tmp/Linux-IR-$today-$host/services_artifacts/lib_systemd_config_file_permissions.txt`
 if [ "$systemdread" ]; then
   echo -e "\e[00;31m[-] /lib/systemd/* config file permissions:\e[00m\n$systemdread"
   echo -e "\n"
 fi
 
 # systemd files not belonging to root
-systemdperms=`find /lib/systemd/ \! -uid 0 -type f 2>/dev/null |xargs -r ls -la 2>/dev/null`
+systemdperms=`find /lib/systemd/ \! -uid 0 -type f 2>/dev/null |xargs -r ls -la 2>/dev/null | tee /tmp/Linux-IR-$today-$host/services_artifacts/lib_systemd_config_file_perms_not_root.txt`
 if [ "$systemdperms" ]; then
    echo -e "\e[00;33m[+] /lib/systemd/* config files not belonging to root:\e[00m\n$systemdperms"
    echo -e "\n"
 fi
 }
 
+
+#SOFTWARE CODE
 software_configs()
 {
 echo -e "\e[00;33m### SOFTWARE #############################################\e[00m" 
+mkdir /tmp/Linux-IR-$today-$host/software_artifacts
 
 #sudo version - check to see if there are any known vulnerabilities with this
-sudover=`sudo -V 2>/dev/null| grep "Sudo version" 2>/dev/null`
+sudover=`sudo -V  2>/dev/null| grep "Sudo version" 2>/dev/null | tee /tmp/Linux-IR-$today-$host/software_artifacts/sudo_version.txt`
 if [ "$sudover" ]; then
   echo -e "\e[00;31m[-] Sudo version:\e[00m\n$sudover" 
   echo -e "\n"
 fi
 
 #mysql details - if installed
-mysqlver=`mysql --version 2>/dev/null`
+mysqlver=`mysql --version | tee /tmp/Linux-IR-$today-$host/software_artifacts/mysql_version.txt 2>/dev/null`
 if [ "$mysqlver" ]; then
   echo -e "\e[00;31m[-] MYSQL version:\e[00m\n$mysqlver" 
   echo -e "\n"
 fi
 
 #checks to see if root/root will get us a connection
-mysqlconnect=`mysqladmin -uroot -proot version 2>/dev/null`
+mysqlconnect=`mysqladmin -uroot -proot version 2>/dev/null | tee /tmp/Linux-IR-$today-$host/software_artifacts/mysql_root_root_connection.txt `
 if [ "$mysqlconnect" ]; then
   echo -e "\e[00;33m[+] We can connect to the local MYSQL service with default root/root credentials!\e[00m\n$mysqlconnect" 
   echo -e "\n"
 fi
 
 #mysql version details
-mysqlconnectnopass=`mysqladmin -uroot version 2>/dev/null`
+mysqlconnectnopass=`mysqladmin -uroot version | tee /tmp/Linux-IR-$today-$host/software_artifacts/mysql_root_no_passwd_connection.txt 2>/dev/null`
 if [ "$mysqlconnectnopass" ]; then
   echo -e "\e[00;33m[+] We can connect to the local MYSQL service as 'root' and without a password!\e[00m\n$mysqlconnectnopass" 
   echo -e "\n"
 fi
 
 #postgres details - if installed
-postgver=`psql -V 2>/dev/null`
+postgver=`psql -V | tee /tmp/Linux-IR-$today-$host/software_artifacts/postgres_version.txt 2>/dev/null`
 if [ "$postgver" ]; then
   echo -e "\e[00;31m[-] Postgres version:\e[00m\n$postgver" 
   echo -e "\n"
 fi
 
 #checks to see if any postgres password exists and connects to DB 'template0' - following commands are a variant on this
-postcon1=`psql -U postgres -w template0 -c 'select version()' 2>/dev/null | grep version`
+postcon1=`psql -U postgres -w template0 -c 'select version()' 2>/dev/null | grep version | tee /tmp/Linux-IR-$today-$host/software_artifacts/postgres_db_connect_user_postgres.txt`
 if [ "$postcon1" ]; then
   echo -e "\e[00;33m[+] We can connect to Postgres DB 'template0' as user 'postgres' with no password!:\e[00m\n$postcon1" 
   echo -e "\n"
 fi
 
-postcon11=`psql -U postgres -w template1 -c 'select version()' 2>/dev/null | grep version`
+postcon11=`psql -U postgres -w template1 -c 'select version()' 2>/dev/null | grep version | tee /tmp/Linux-IR-$today-$host/software_artifacts/postgres_db_connect_user_postgres2.txt`
 if [ "$postcon11" ]; then
   echo -e "\e[00;33m[+] We can connect to Postgres DB 'template1' as user 'postgres' with no password!:\e[00m\n$postcon11" 
   echo -e "\n"
 fi
 
-postcon2=`psql -U pgsql -w template0 -c 'select version()' 2>/dev/null | grep version`
-if [ "$postcon2" ]; then
-  echo -e "\e[00;33m[+] We can connect to Postgres DB 'template0' as user 'psql' with no password!:\e[00m\n$postcon2" 
-  echo -e "\n"
-fi
-
-postcon22=`psql -U pgsql -w template1 -c 'select version()' 2>/dev/null | grep version`
-if [ "$postcon22" ]; then
-  echo -e "\e[00;33m[+] We can connect to Postgres DB 'template1' as user 'psql' with no password!:\e[00m\n$postcon22" 
-  echo -e "\n"
-fi
 
 #apache details - if installed
-apachever=`apache2 -v 2>/dev/null; httpd -v 2>/dev/null`
+apachever=`apache2 -v 2>/dev/null | tee /tmp/Linux-IR-$today-$host/software_artifacts/apache_artifacts.txt; httpd -v 2>/dev/null | tee /tmp/Linux-IR-$today-$host/software_artifacts/httpd_version.txt`
 if [ "$apachever" ]; then
   echo -e "\e[00;31m[-] Apache version:\e[00m\n$apachever" 
   echo -e "\n"
 fi
 
 #what account is apache running under
-apacheusr=`grep -i 'user\|group' /etc/apache2/envvars 2>/dev/null |awk '{sub(/.*\export /,"")}1' 2>/dev/null`
+apacheusr=`grep -i 'user\|group' /etc/apache2/envvars |awk '{sub(/.*\export /,"")}1' | tee /tmp/Linux-IR-$today-$host/software_artifacts/apache_user_group.txt  2>/dev/null`
 if [ "$apacheusr" ]; then
   echo -e "\e[00;31m[-] Apache user configuration:\e[00m\n$apacheusr" 
   echo -e "\n"
@@ -796,14 +779,14 @@ if [ "$export" ] && [ "$apacheusr" ]; then
 fi
 
 #installed apache modules
-apachemodules=`apache2ctl -M 2>/dev/null; httpd -M 2>/dev/null`
+apachemodules=`apache2ctl -M 2>/dev/null | tee /tmp/Linux-IR-$today-$host/software_artifacts/apache_modules.txt; httpd -M 2>/dev/null | tee /tmp/Linux-IR-$today-$host/software_artifacts/apache_modules2.txt`
 if [ "$apachemodules" ]; then
   echo -e "\e[00;31m[-] Installed Apache modules:\e[00m\n$apachemodules" 
   echo -e "\n"
 fi
 
 #htpasswd check
-htpasswd=`find / -name .htpasswd -print -exec cat {} \; 2>/dev/null`
+htpasswd=`find / -name .htpasswd -print -exec cat {} + 2>/dev/null | tee /tmp/Linux-IR-$today-$host/software_artifacts/htpasswd.txt`
 if [ "$htpasswd" ]; then
     echo -e "\e[00;33m[-] htpasswd found - could contain passwords:\e[00m\n$htpasswd"
     echo -e "\n"
@@ -811,7 +794,7 @@ fi
 
 #anything in the default http home dirs (a thorough only check as output can be large)
 if [ "$thorough" = "1" ]; then
-  apachehomedirs=`ls -alhR /var/www/ 2>/dev/null; ls -alhR /srv/www/htdocs/ 2>/dev/null; ls -alhR /usr/local/www/apache2/data/ 2>/dev/null; ls -alhR /opt/lampp/htdocs/ 2>/dev/null`
+  apachehomedirs=`ls -alhR /var/www/ 2>/dev/null| tee /tmp/Linux-IR-$today-$host/software_artifacts/apache_home_dirs.txt; ls -alhR /srv/www/htdocs/ 2>/dev/null | tee /tmp/Linux-IR-$today-$host/software_artifacts/apache_home_dirs2.txt; ls -alhR /usr/local/www/apache2/data/ 2>/dev/null | tee /tmp/Linux-IR-$today-$host/software_artifacts/apache_home_dirs3.txt; ls -alhR /opt/lampp/htdocs/ 2>/dev/null | tee /tmp/Linux-IR-$today-$host/software_artifacts/apache_home_dirs3.txt`
   if [ "$apachehomedirs" ]; then
     echo -e "\e[00;31m[-] www home dir contents:\e[00m\n$apachehomedirs" 
     echo -e "\n"
@@ -820,28 +803,30 @@ fi
 
 }
 
+# FILE ARTIFACTS CODE
 interesting_files()
 {
 echo -e "\e[00;33m### INTERESTING FILES ####################################\e[00m" 
+mkdir /tmp/Linux-IR-$today-$host/file_artifacts
 
 #checks to see if various files are installed
-echo -e "\e[00;31m[-] Useful file locations:\e[00m" ; which nc 2>/dev/null ; which netcat 2>/dev/null ; which wget 2>/dev/null ; which nmap 2>/dev/null ; which gcc 2>/dev/null; which curl 2>/dev/null 
+echo -e "\e[00;31m[-] Useful file locations:\e[00m" ; which nc 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/nc_filepath.txt; which netcat 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/netcat_filepath.txt; which wget 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/wget_filepath.txt; which nmap 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/nmap_filepath.txt; which gcc 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/gcc_filepath.txt; which curl 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/curl_filepath.txt
 echo -e "\n" 
 
 #limited search for installed compilers
-compiler=`dpkg --list 2>/dev/null| grep compiler |grep -v decompiler 2>/dev/null && yum list installed 'gcc*' 2>/dev/null| grep gcc 2>/dev/null`
+compiler=`dpkg --list 2>/dev/null| grep compiler |grep -v decompiler 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/dpkg_compiler.txt && yum list installed 'gcc*' 2>/dev/null| grep gcc 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/installed_compiler_yum.txt`
 if [ "$compiler" ]; then
   echo -e "\e[00;31m[-] Installed compilers:\e[00m\n$compiler" 
   echo -e "\n"
 fi
 
-#manual check - lists out sensitive files, can we read/modify etc.
-echo -e "\e[00;31m[-] Can we read/write sensitive files:\e[00m" ; ls -la /etc/passwd 2>/dev/null ; ls -la /etc/group 2>/dev/null ; ls -la /etc/profile 2>/dev/null; ls -la /etc/shadow 2>/dev/null ; ls -la /etc/master.passwd 2>/dev/null 
+#manual check - lists out sensitive file permissions, can we read/modify etc.
+echo -e "\e[00;31m[-] Permissions for sensitive files:\e[00m" ; ls -la /etc/passwd 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/etc_passwd_permissions.txt; ls -la /etc/group 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/group_permissions.txt; ls -la /etc/profile 2>/dev/null; ls -la /etc/shadow 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/etc_shadow_permissions.txt; ls -la /etc/master.passwd 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/etc_master_passwd_permissions.txt
 echo -e "\n" 
 
 #search for suid files
 allsuid=`find / -perm -4000 -type f 2>/dev/null`
-findsuid=`find $allsuid -perm -4000 -type f -exec ls -la {} 2>/dev/null \;`
+findsuid=`find $allsuid -perm -4000 -type f -exec ls -la {} + 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/suid_files_with_permissions.txt`
 if [ "$findsuid" ]; then
   echo -e "\e[00;31m[-] SUID files:\e[00m\n$findsuid" 
   echo -e "\n"
@@ -853,21 +838,21 @@ if [ "$export" ] && [ "$findsuid" ]; then
 fi
 
 #list of 'interesting' suid files - feel free to make additions
-intsuid=`find $allsuid -perm -4000 -type f -exec ls -la {} \; 2>/dev/null | grep -w $binarylist 2>/dev/null`
+intsuid=`find $allsuid -perm -4000 -type f -exec ls -la {} + 2>/dev/null | grep -w $binarylist 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/interesting_suid_files.txt`
 if [ "$intsuid" ]; then
   echo -e "\e[00;33m[+] Possibly interesting SUID files:\e[00m\n$intsuid" 
   echo -e "\n"
 fi
 
 #lists world-writable suid files
-wwsuid=`find $allsuid -perm -4002 -type f -exec ls -la {} 2>/dev/null \;`
+wwsuid=`find $allsuid -perm -4002 -type f -exec ls -la {} + 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/suid_writeable_files_with_permissions.txt`
 if [ "$wwsuid" ]; then
   echo -e "\e[00;33m[+] World-writable SUID files:\e[00m\n$wwsuid" 
   echo -e "\n"
 fi
 
 #lists world-writable suid files owned by root
-wwsuidrt=`find $allsuid -uid 0 -perm -4002 -type f -exec ls -la {} 2>/dev/null \;`
+wwsuidrt=`find $allsuid -uid 0 -perm -4002 -type f -exec ls -la {} + 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/suid_files_owned_by_root.txt`
 if [ "$wwsuidrt" ]; then
   echo -e "\e[00;33m[+] World-writable SUID files owned by root:\e[00m\n$wwsuidrt" 
   echo -e "\n"
@@ -875,7 +860,7 @@ fi
 
 #search for sgid files
 allsgid=`find / -perm -2000 -type f 2>/dev/null`
-findsgid=`find $allsgid -perm -2000 -type f -exec ls -la {} 2>/dev/null \;`
+findsgid=`find $allsgid -perm -2000 -type f -exec ls -la {} + 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/sgid_files_with_permissions.txt`
 if [ "$findsgid" ]; then
   echo -e "\e[00;31m[-] SGID files:\e[00m\n$findsgid" 
   echo -e "\n"
@@ -887,28 +872,28 @@ if [ "$export" ] && [ "$findsgid" ]; then
 fi
 
 #list of 'interesting' sgid files
-intsgid=`find $allsgid -perm -2000 -type f  -exec ls -la {} \; 2>/dev/null | grep -w $binarylist 2>/dev/null`
+intsgid=`find $allsgid -perm -2000 -type f  -exec ls -la {} + 2>/dev/null | grep -w $binarylist 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/interesting_sgid_files.txt`
 if [ "$intsgid" ]; then
   echo -e "\e[00;33m[+] Possibly interesting SGID files:\e[00m\n$intsgid" 
   echo -e "\n"
 fi
 
 #lists world-writable sgid files
-wwsgid=`find $allsgid -perm -2002 -type f -exec ls -la {} 2>/dev/null \;`
+wwsgid=`find $allsgid -perm -2002 -type f -exec ls -la {} + 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/sgid_writeable_files_with_permissions.txt`
 if [ "$wwsgid" ]; then
   echo -e "\e[00;33m[+] World-writable SGID files:\e[00m\n$wwsgid" 
   echo -e "\n"
 fi
 
 #lists world-writable sgid files owned by root
-wwsgidrt=`find $allsgid -uid 0 -perm -2002 -type f -exec ls -la {} 2>/dev/null \;`
+wwsgidrt=`find $allsgid -uid 0 -perm -2002 -type f -exec ls -la {} 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/sgid_files_owned_by_root.txt`
 if [ "$wwsgidrt" ]; then
   echo -e "\e[00;33m[+] World-writable SGID files owned by root:\e[00m\n$wwsgidrt" 
   echo -e "\n"
 fi
 
 #list all files with POSIX capabilities set along with there capabilities
-fileswithcaps=`getcap -r / 2>/dev/null || /sbin/getcap -r / 2>/dev/null`
+fileswithcaps=`getcap -r / 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/file_posix_capabilities.txt || /sbin/getcap -r / 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/file_with_posix_capabilities.txt`
 if [ "$fileswithcaps" ]; then
   echo -e "\e[00;31m[+] Files with POSIX capabilities set:\e[00m\n$fileswithcaps"
   echo -e "\n"
@@ -919,8 +904,8 @@ if [ "$export" ] && [ "$fileswithcaps" ]; then
   for i in $fileswithcaps; do cp $i $format/files_with_capabilities/; done 2>/dev/null
 fi
 
-#searches /etc/security/capability.conf for users associated capapilies
-userswithcaps=`grep -v '^#\|none\|^$' /etc/security/capability.conf 2>/dev/null`
+#search /etc/security/capability.conf for users associated capabilities
+userswithcaps=`grep -v '^#\|none\|^$' /etc/security/capability.conf 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/users_with_specific_posix_capabilities.txt`
 if [ "$userswithcaps" ]; then
   echo -e "\e[00;33m[+] Users with specific POSIX capabilities:\e[00m\n$userswithcaps"
   echo -e "\n"
@@ -953,7 +938,7 @@ matchedcaps=`echo -e "$userswithcaps" | grep \`whoami\` | awk '{print $1}' 2>/de
 	fi
 fi
 
-#look for private keys - thanks djhohnstein
+#search for private keys 
 if [ "$thorough" = "1" ]; then
 privatekeyfiles=`grep -rl "PRIVATE KEY-----" /home 2>/dev/null`
 	if [ "$privatekeyfiles" ]; then
@@ -962,7 +947,7 @@ privatekeyfiles=`grep -rl "PRIVATE KEY-----" /home 2>/dev/null`
 	fi
 fi
 
-#look for AWS keys - thanks djhohnstein
+#look for AWS keys 
 if [ "$thorough" = "1" ]; then
 awskeyfiles=`grep -rli "aws_secret_access_key" /home 2>/dev/null`
 	if [ "$awskeyfiles" ]; then
@@ -971,7 +956,7 @@ awskeyfiles=`grep -rli "aws_secret_access_key" /home 2>/dev/null`
 	fi
 fi
 
-#look for git credential files - thanks djhohnstein
+#look for git credential files 
 if [ "$thorough" = "1" ]; then
 gitcredfiles=`find / -name ".git-credentials" 2>/dev/null`
 	if [ "$gitcredfiles" ]; then
@@ -997,18 +982,7 @@ if [ "$thorough" = "1" ]; then
 fi
 
 #are any .plan files accessible in /home (could contain useful information)
-usrplan=`find /home -iname *.plan -exec ls -la {} \; -exec cat {} 2>/dev/null \;`
-if [ "$usrplan" ]; then
-  echo -e "\e[00;31m[-] Plan file permissions and contents:\e[00m\n$usrplan" 
-  echo -e "\n"
-fi
-
-if [ "$export" ] && [ "$usrplan" ]; then
-  mkdir $format/plan_files/ 2>/dev/null
-  for i in $usrplan; do cp --parents $i $format/plan_files/; done 2>/dev/null
-fi
-
-bsdusrplan=`find /usr/home -iname *.plan -exec ls -la {} \; -exec cat {} 2>/dev/null \;`
+bsdusrplan=`find /usr/home -iname *.plan -exec ls -la {}  -exec cat {} + 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/plan_file_permissions_contents.txt;`
 if [ "$bsdusrplan" ]; then
   echo -e "\e[00;31m[-] Plan file permissions and contents:\e[00m\n$bsdusrplan" 
   echo -e "\n"
@@ -1020,7 +994,7 @@ if [ "$export" ] && [ "$bsdusrplan" ]; then
 fi
 
 #are there any .rhosts files accessible - these may allow us to login as another user etc.
-rhostsusr=`find /home -iname *.rhosts -exec ls -la {} 2>/dev/null \; -exec cat {} 2>/dev/null \;`
+rhostsusr=`find /home -iname *.rhosts -exec ls -la {} 2>/dev/null  -exec cat {} + 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/rhost_config_file_with_specific_posix_capabilities.txt`
 if [ "$rhostsusr" ]; then
   echo -e "\e[00;33m[+] rhost config file(s) and file contents:\e[00m\n$rhostsusr" 
   echo -e "\n"
@@ -1031,7 +1005,7 @@ if [ "$export" ] && [ "$rhostsusr" ]; then
   for i in $rhostsusr; do cp --parents $i $format/rhosts/; done 2>/dev/null
 fi
 
-bsdrhostsusr=`find /usr/home -iname *.rhosts -exec ls -la {} 2>/dev/null \; -exec cat {} 2>/dev/null \;`
+bsdrhostsusr=`find /usr/home -iname *.rhosts -exec ls -la {} + 2>/dev/null  -exec cat {} 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/rhosts_config_and_file_contents.txt`
 if [ "$bsdrhostsusr" ]; then
   echo -e "\e[00;33m[+] rhost config file(s) and file contents:\e[00m\n$bsdrhostsusr" 
   echo -e "\n"
@@ -1042,7 +1016,7 @@ if [ "$export" ] && [ "$bsdrhostsusr" ]; then
   for i in $bsdrhostsusr; do cp --parents $i $format/rhosts/; done 2>/dev/null
 fi
 
-rhostssys=`find /etc -iname hosts.equiv -exec ls -la {} 2>/dev/null \; -exec cat {} 2>/dev/null \;`
+rhostssys=`find /etc -iname hosts.equiv -exec ls -la {} 2>/dev/null  -exec cat {} 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/hosts_equiv_file_and_contents.txt`
 if [ "$rhostssys" ]; then
   echo -e "\e[00;33m[+] Hosts.equiv file and contents: \e[00m\n$rhostssys" 
   echo -e "\n"
@@ -1054,7 +1028,7 @@ if [ "$export" ] && [ "$rhostssys" ]; then
 fi
 
 #list nfs shares/permisisons etc.
-nfsexports=`ls -la /etc/exports 2>/dev/null; cat /etc/exports 2>/dev/null`
+nfsexports=`ls -la /etc/exports 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/NFS_config_details.txt; cat /etc/exports 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/NFS_config_contents.txt`
 if [ "$nfsexports" ]; then
   echo -e "\e[00;31m[-] NFS config details: \e[00m\n$nfsexports" 
   echo -e "\n"
@@ -1065,19 +1039,18 @@ if [ "$export" ] && [ "$nfsexports" ]; then
   cp /etc/exports $format/etc-export/exports 2>/dev/null
 fi
 
-if [ "$thorough" = "1" ]; then
-  #phackt
-  #displaying /etc/fstab
-  fstab=`cat /etc/fstab 2>/dev/null`
+
+#displaying /etc/fstab
+  fstab=`cat /etc/fstab 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/fstab_contents.txt`
   if [ "$fstab" ]; then
-    echo -e "\e[00;31m[-] NFS displaying partitions and filesystems - you need to check if exotic filesystems\e[00m"
+    echo -e "\e[00;31m[-] NFS displaying partitions and filesystems\e[00m"
     echo -e "$fstab"
     echo -e "\n"
   fi
-fi
+
 
 #looking for credentials in /etc/fstab
-fstab=`grep username /etc/fstab 2>/dev/null |awk '{sub(/.*\username=/,"");sub(/\,.*/,"")}1' 2>/dev/null| xargs -r echo username: 2>/dev/null; grep password /etc/fstab 2>/dev/null |awk '{sub(/.*\password=/,"");sub(/\,.*/,"")}1' 2>/dev/null| xargs -r echo password: 2>/dev/null; grep domain /etc/fstab 2>/dev/null |awk '{sub(/.*\domain=/,"");sub(/\,.*/,"")}1' 2>/dev/null| xargs -r echo domain: 2>/dev/null`
+fstab=`grep username /etc/fstab 2>/dev/null |awk '{sub(/.*\username=/,"");sub(/\,.*/,"")}1' 2>/dev/null| xargs -r echo username: 2>/dev/null; grep password /etc/fstab 2>/dev/null |awk '{sub(/.*\password=/,"");sub(/\,.*/,"")}1' 2>/dev/null| xargs -r echo password: 2>/dev/null; grep domain /etc/fstab 2>/dev/null |awk '{sub(/.*\domain=/,"");sub(/\,.*/,"")}1' 2>/dev/null| xargs -r echo domain: 2>/dev/null; `
 if [ "$fstab" ]; then
   echo -e "\e[00;33m[+] Looks like there are credentials in /etc/fstab!\e[00m\n$fstab"
   echo -e "\n"
@@ -1103,7 +1076,7 @@ fi
 if [ "$keyword" = "" ]; then
   echo -e "[-] Can't search *.conf files as no keyword was entered\n" 
   else
-    confkey=`find / -maxdepth 4 -name *.conf -type f -exec grep -Hn $keyword {} \; 2>/dev/null`
+    confkey=`find / -maxdepth 4 -name *.conf -type f -exec grep -Hn $keyword {} + 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/keyword_search_conf_files.txt`
     if [ "$confkey" ]; then
       echo -e "\e[00;31m[-] Find keyword ($keyword) in .conf files (recursive 4 levels - output format filepath:identified line number where keyword appears):\e[00m\n$confkey" 
       echo -e "\n" 
@@ -1128,7 +1101,7 @@ fi
 if [ "$keyword" = "" ]; then
   echo -e "[-] Can't search *.php files as no keyword was entered\n" 
   else
-    phpkey=`find / -maxdepth 10 -name *.php -type f -exec grep -Hn $keyword {} \; 2>/dev/null`
+    phpkey=`find / -maxdepth 10 -name *.php -type f -exec grep -Hn $keyword {} + 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/keyword_search_php_files.txt`
     if [ "$phpkey" ]; then
       echo -e "\e[00;31m[-] Find keyword ($keyword) in .php files (recursive 10 levels - output format filepath:identified line number where keyword appears):\e[00m\n$phpkey" 
       echo -e "\n" 
@@ -1153,7 +1126,7 @@ fi
 if [ "$keyword" = "" ];then
   echo -e "[-] Can't search *.log files as no keyword was entered\n" 
   else
-    logkey=`find / -maxdepth 4 -name *.log -type f -exec grep -Hn $keyword {} \; 2>/dev/null`
+    logkey=`find / -maxdepth 4 -name *.log -type f -exec grep -Hn $keyword {} + 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/keyword_search_log_files.txt`
     if [ "$logkey" ]; then
       echo -e "\e[00;31m[-] Find keyword ($keyword) in .log files (recursive 4 levels - output format filepath:identified line number where keyword appears):\e[00m\n$logkey" 
       echo -e "\n" 
@@ -1178,7 +1151,7 @@ fi
 if [ "$keyword" = "" ];then
   echo -e "[-] Can't search *.ini files as no keyword was entered\n" 
   else
-    inikey=`find / -maxdepth 4 -name *.ini -type f -exec grep -Hn $keyword {} \; 2>/dev/null`
+    inikey=`find / -maxdepth 4 -name *.ini -type f -exec grep -Hn $keyword {} + 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/keyword_search_ini_files.txt`
     if [ "$inikey" ]; then
       echo -e "\e[00;31m[-] Find keyword ($keyword) in .ini files (recursive 4 levels - output format filepath:identified line number where keyword appears):\e[00m\n$inikey" 
       echo -e "\n" 
@@ -1200,7 +1173,7 @@ if [ "$keyword" = "" ];then
 fi
 
 #quick extract of .conf files from /etc - only 1 level
-allconf=`find /etc/ -maxdepth 1 -name *.conf -type f -exec ls -la {} \; 2>/dev/null`
+allconf=`find /etc/ -maxdepth 1 -name *.conf -type f -exec ls -la {} + 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/etc_conf_files.txt`
 if [ "$allconf" ]; then
   echo -e "\e[00;31m[-] All *.conf files in /etc (recursive 1 level):\e[00m\n$allconf" 
   echo -e "\n"
@@ -1212,7 +1185,7 @@ if [ "$export" ] && [ "$allconf" ]; then
 fi
 
 #extract any user history files that are accessible
-usrhist=`ls -la ~/.*_history 2>/dev/null`
+usrhist=`ls -la ~/.*_history 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/user_history_files.txt`
 if [ "$usrhist" ]; then
   echo -e "\e[00;31m[-] Current user's history files:\e[00m\n$usrhist" 
   echo -e "\n"
@@ -1224,7 +1197,7 @@ if [ "$export" ] && [ "$usrhist" ]; then
 fi
 
 #can we read roots *_history files - could be passwords stored etc.
-roothist=`ls -la /root/.*_history 2>/dev/null`
+roothist=`ls -la /root/.*_history 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/root_history_files.txt`
 if [ "$roothist" ]; then
   echo -e "\e[00;33m[+] Root's history files are accessible!\e[00m\n$roothist" 
   echo -e "\n"
@@ -1236,14 +1209,14 @@ if [ "$export" ] && [ "$roothist" ]; then
 fi
 
 #all accessible .bash_history files in /home
-checkbashhist=`find /home -name .bash_history -print -exec cat {} 2>/dev/null \;`
+checkbashhist=`find /home -name .bash_history -print -exec cat {} + 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/bash_history_files.txt`
 if [ "$checkbashhist" ]; then
   echo -e "\e[00;31m[-] Location and contents (if accessible) of .bash_history file(s):\e[00m\n$checkbashhist"
   echo -e "\n"
 fi
 
 #any .bak files that may be of interest
-bakfiles=`find / -name *.bak -type f 2</dev/null`
+bakfiles=`find / -name *.bak -type f 2</dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/possible_backup_files.txt`
 if [ "$bakfiles" ]; then
   echo -e "\e[00;31m[-] Location and Permissions (if accessible) of .bak file(s):\e[00m"
   for bak in `echo $bakfiles`; do ls -la $bak;done
@@ -1251,14 +1224,14 @@ if [ "$bakfiles" ]; then
 fi
 
 #is there any mail accessible
-readmail=`ls -la /var/mail 2>/dev/null`
+readmail=`ls -la /var/mail 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/interesting_mail_artifacts.txt`
 if [ "$readmail" ]; then
   echo -e "\e[00;31m[-] Any interesting mail in /var/mail:\e[00m\n$readmail" 
   echo -e "\n"
 fi
 
 #can we read roots mail
-readmailroot=`head /var/mail/root 2>/dev/null`
+readmailroot=`head /var/mail/root 2>/dev/null | tee /tmp/Linux-IR-$today-$host/file_artifacts/root_mail.txt`
 if [ "$readmailroot" ]; then
   echo -e "\e[00;33m[+] We can read /var/mail/root! (snippet below)\e[00m\n$readmailroot" 
   echo -e "\n"
@@ -1270,39 +1243,44 @@ if [ "$export" ] && [ "$readmailroot" ]; then
 fi
 }
 
+
+
+# DOCKER CODE
 docker_checks()
 {
 
+mkdir /tmp/Linux-IR-$today-$host/docker_lxc_container_artifacts
+
 #specific checks - check to see if we're in a docker container
-dockercontainer=` grep -i docker /proc/self/cgroup  2>/dev/null; find / -name "*dockerenv*" -exec ls -la {} \; 2>/dev/null`
+dockercontainer=`find / -name "*dockerenv*" -exec ls -la {}  2>/dev/null | tee /tmp/Linux-IR-$today-$host/docker_lxc_container_artifacts/dockerenv.txt`
 if [ "$dockercontainer" ]; then
   echo -e "\e[00;33m[+] Looks like we're in a Docker container:\e[00m\n$dockercontainer" 
   echo -e "\n"
 fi
 
 #specific checks - check to see if we're a docker host
-dockerhost=`docker --version 2>/dev/null; docker ps -a 2>/dev/null`
+dockerhost=`docker --version 2>/dev/null | tee /tmp/Linux-IR-$today-$host/docker_lxc_container_artifacts/docker_version.txt; docker ps -a 2>/dev/null | tee /tmp/Linux-IR-$today-$host/docker_lxc_container_artifacts/docker_lxc_containers.txt`
 if [ "$dockerhost" ]; then
   echo -e "\e[00;33m[+] Looks like we're hosting Docker:\e[00m\n$dockerhost" 
   echo -e "\n"
 fi
 
 #specific checks - are we a member of the docker group
-dockergrp=`id | grep -i docker 2>/dev/null`
+dockergrp=`id | grep -i docker 2>/dev/null | tee /tmp/Linux-IR-$today-$host/docker_lxc_container_artifacts/docker_group_id.txt`
 if [ "$dockergrp" ]; then
   echo -e "\e[00;33m[+] We're a member of the (docker) group - could possibly misuse these rights!\e[00m\n$dockergrp" 
   echo -e "\n"
 fi
 
 #specific checks - are there any docker files present
-dockerfiles=`find / -name Dockerfile -exec ls -l {} 2>/dev/null \;`
+dockerfiles=`find / -name Dockerfile -exec ls -l {} + 2>/dev/null | tee /tmp/Linux-IR-$today-$host/docker_lxc_container_artifacts/docker_files.txt`
 if [ "$dockerfiles" ]; then
   echo -e "\e[00;31m[-] Anything juicy in the Dockerfile:\e[00m\n$dockerfiles" 
   echo -e "\n"
 fi
 
 #specific checks - are there any docker files present
-dockeryml=`find / -name docker-compose.yml -exec ls -l {} 2>/dev/null \;`
+dockeryml=`find / -name docker-compose.yml -exec ls -l {} + 2>/dev/null | tee /tmp/Linux-IR-$today-$host/docker_lxc_container_artifacts/docker_compose_yml.txt`
 if [ "$dockeryml" ]; then
   echo -e "\e[00;31m[-] Anything juicy in docker-compose.yml:\e[00m\n$dockeryml" 
   echo -e "\n"
@@ -1313,14 +1291,14 @@ lxc_container_checks()
 {
 
 #specific checks - are we in an lxd/lxc container
-lxccontainer=`grep -qa container=lxc /proc/1/environ 2>/dev/null`
+lxccontainer=`grep -qa container=lxc /proc/1/environ 2>/dev/null | tee /tmp/Linux-IR-$today-$host/docker_lxc_container_artifacts/lxd_container.txt`
 if [ "$lxccontainer" ]; then
   echo -e "\e[00;33m[+] Looks like we're in a lxc container:\e[00m\n$lxccontainer"
   echo -e "\n"
 fi
 
 #specific checks - are we a member of the lxd group
-lxdgroup=`id | grep -i lxd 2>/dev/null`
+lxdgroup=`id | grep -i lxd 2>/dev/null | tee /tmp/Linux-IR-$today-$host/docker_lxc_container_artifacts/lxd_container_groups.txt`
 if [ "$lxdgroup" ]; then
   echo -e "\e[00;33m[+] We're a member of the (lxd) group - could possibly misuse these rights!\e[00m\n$lxdgroup"
   echo -e "\n"
@@ -1329,7 +1307,7 @@ fi
 
 footer()
 {
-echo -e "\e[00;33m### SCAN COMPLETE ####################################\e[00m" 
+echo -e "\e[00;33m########## ARTIFACTS COLLECTION COMPLETE ###############\e[00m" 
 }
 
 call_each()
