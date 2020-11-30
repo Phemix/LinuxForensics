@@ -58,7 +58,7 @@ sleep 2
 
 if [ "$export" ]; then
   mkdir $export 2>/dev/null
-  format=$export/LinuxIR-Enumeration-FIleExports-`date +"%d-%m-%y"`
+  format=$export/Linux-IR-Enumeration-FIleExports-`hostname`-`date +"%m-%d-%y"`
   mkdir $format 2>/dev/null
 fi
 
@@ -69,7 +69,7 @@ if [ "$sudopass" ]; then
 fi
 
 #remove any pre-existing collection folder
-rm -r /tmp/Linux-IR*
+#rm -r /tmp/Linux-IR-$today-$host/
 
 
 
@@ -91,6 +91,7 @@ echo -e "\e[00m\n"
 
 # useful binaries (thanks to https://gtfobins.github.io/)
 binarylist='aria2c\|arp\|ash\|awk\|base64\|bash\|busybox\|cat\|chmod\|chown\|cp\|csh\|curl\|cut\|dash\|date\|dd\|diff\|dmsetup\|docker\|ed\|emacs\|env\|expand\|expect\|file\|find\|flock\|fmt\|fold\|ftp\|gawk\|gdb\|gimp\|git\|grep\|head\|ht\|iftop\|ionice\|ip$\|irb\|jjs\|jq\|jrunscript\|ksh\|ld.so\|ldconfig\|less\|logsave\|lua\|make\|man\|mawk\|more\|mv\|mysql\|nano\|nawk\|nc\|netcat\|nice\|nl\|nmap\|node\|od\|openssl\|perl\|pg\|php\|pic\|pico\|python\|readelf\|rlwrap\|rpm\|rpmquery\|rsync\|ruby\|run-parts\|rvim\|scp\|script\|sed\|setarch\|sftp\|sh\|shuf\|socat\|sort\|sqlite3\|ssh$\|start-stop-daemon\|stdbuf\|strace\|systemctl\|tail\|tar\|taskset\|tclsh\|tee\|telnet\|tftp\|time\|timeout\|ul\|unexpand\|uniq\|unshare\|vi\|vim\|watch\|wget\|wish\|xargs\|xxd\|zip\|zsh'
+
 
 #SYSTEM INFORMATION CODE
 system_info()
