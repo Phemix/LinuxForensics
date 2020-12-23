@@ -3,6 +3,13 @@
 version="version 0.982"
 #@rebootuser
 
+#confirm script is running as root or admin user
+
+if [ $EUID -ne 0 ]
+  then echo "You must elevate privileges to root to run this script" 
+  exit 
+fi 
+
 #help function
 usage () 
 { 
@@ -156,19 +163,20 @@ if [ "$loggedonusrs" ]; then
 fi
 
 #lists all id's and respective group(s)
-grpinfo=`for i in $(cut -d":" -f1 /etc/passwd | tee /tmp/Linux-IR-$today-$host/user_information/groups.txt 2>/dev/null);do id $i;done  2>/dev/null`
+grpinfo=`for i in $(cut -d":" -f1 /etc/passwd 2>/dev/null);do id $i;done 2>/dev/null | tee /tmp/Linux-IR-$today-$host/user_information/group_memberships.txt`
 if [ "$grpinfo" ]; then
-  echo -e "\e[00;31m[-] Group memberships:\e[00m\n$groupinfo" 
+  echo -e "\e[00;31m[-] Group memberships:\e[00m\n$grpinfo"
   echo -e "\n"
 fi
 
 #find admin users
-adm_users=$(echo -e "$grpinfo" | grep "(adm)") | tee /tmp/Linux-IR-$today-$host/user_information/admin_users.txt
+adm_users=$(echo -e "$grpinfo" | grep "(adm)" | tee /tmp/Linux-IR-$today-$host/user_information/admin_users.txt)
 if [[ ! -z $adm_users ]];
   then
-    echo -e "\e[00;31m[-] Admin users:\e[00m\n$adm_users" 
+    echo -e "\e[00;31m[-] Some Admin users in the house:\e[00m\n$adm_users"
     echo -e "\n"
 fi
+
 
 #checks to see if any hashes are stored in /etc/passwd (depreciated  *nix storage method)
 hashesinpasswd=`grep -v '^[^:]*:[x]' /etc/passwd | tee /tmp/Linux-IR-$today-$host/user_information/hashes_in_etc_passwd.txt 2>/dev/null`
@@ -384,7 +392,7 @@ if [ "$envinfo" ]; then
 fi
 
 #check if selinux is enabled
-sestatus=`sestatus | tee /tmp/Linux-IR-$today-$host/environment_artifacts/selinux.txt 2>/dev/null`
+sestatus=`sestatus 2>/dev/null | tee /tmp/Linux-IR-$today-$host/environment_artifacts/selinux.txt `
 if [ "$sestatus" ]; then
   echo -e "\e[00;31m[-] SELinux seems to be present:\e[00m\n$sestatus"
   echo -e "\n"
