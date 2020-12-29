@@ -1,1 +1,1 @@
-#Linux Artufacts Collections Script
+# Linux Artufacts Collections Script
