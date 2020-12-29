@@ -113,14 +113,14 @@ if [ "$unameinfo" ]; then
   echo -e "\n" 
 fi
 
-procver=`cat /proc/version | tee /tmp/Linux-IR-$today-$host/system_information/version_information.txt 2>/dev/null`
+procver=`cat /proc/version 2>/dev/null | tee /tmp/Linux-IR-$today-$host/system_information/version_information.txt `
 if [ "$procver" ]; then
   echo -e "\e[00;31m[-] Kernel information (continued):\e[00m\n$procver" 
   echo -e "\n" 
 fi
 
 #search all *-release files for version info
-release=`cat /etc/*-release  | tee /tmp/Linux-IR-$today-$host/system_information/release_information.txt 2>/dev/null`
+release=`cat /etc/*-release 2>/dev/null | tee /tmp/Linux-IR-$today-$host/system_information/release_information.txt `
 if [ "$release" ]; then
   echo -e "\e[00;31m[-] Specific release information:\e[00m\n$release" 
   echo -e "\n" 
@@ -241,9 +241,9 @@ if [ "$export" ] && [ "$sudoers" ]; then
 fi
 
 #check if sudo works without supplying a password
-sudoperms=`echo '' | sudo -S -l -k | tee /tmp/Linux-IR-$today-$host/user_information/sudoers_without_password.txt 2>/dev/null`
+sudoperms=`echo '' | sudo -S -l -k 2>/dev/null | tee /tmp/Linux-IR-$today-$host/user_information/sudoers_without_password.txt `
 if [ "$sudoperms" ]; then
-  echo -e "\e[00;33m[+] We can sudo without supplying a password!\e[00m\n$sudoperms" 
+  echo -e "\e[00;33m[+] We can possibly sudo without supplying a password!\e[00m\n$sudoperms" 
   echo -e "\n"
 fi
 
@@ -254,7 +254,7 @@ if [ "$sudopass" ]; then
     else
       sudoauth=`echo $userpassword | sudo -S -l -k | tee /tmp/Linux-IR-$today-$host/user_information/sudoers_with_password.txt 2>/dev/null`
       if [ "$sudoauth" ]; then
-        echo -e "\e[00;33m[+] We can sudo when supplying a password!\e[00m\n$sudoauth" 
+        echo -e "\e[00;33m[+] We can possibly sudo when supplying a password!\e[00m\n$sudoauth" 
         echo -e "\n"
       fi
     fi
@@ -485,7 +485,7 @@ if [ "$anacrontab" ]; then
 fi
 
 #pull out account names from /etc/passwd and see if any users have associated cronjobs (priv command)
-cronother=`cut -d ":" -f 1 /etc/passwd | xargs -n1 crontab -l -u | tee /tmp/Linux-IR-$today-$host/persistence_artifacts/cron_job_all_users.txt 2>/dev/null`
+cronother=`cut -d ":" -f 1 /etc/passwd | xargs -n1 crontab -l -u 2>/dev/null | tee /tmp/Linux-IR-$today-$host/persistence_artifacts/cron_job_all_users.txt `
 if [ "$cronother" ]; then
   echo -e "\e[00;31m[-] Jobs held by all users:\e[00m\n$cronother" 
   echo -e "\n"
