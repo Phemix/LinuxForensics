@@ -13,7 +13,7 @@ This script will call all other needed scripts and perfrom some pre-processing a
 ### Output Folder Structure
 The collection tool collects its output in a folder using a naming convention - *Linux-IR-Output-date-host* which contains two main folders (*'Linux-IR-date-hostname'* and *'Linux-IR-Enumeration-FileExports-hostname-date'*). All folders will be compressed at the time of collection. Navigate into the folders to attempt to find whatever artifacts you are looking for.
 
-The output from the first collection is collected in folders that contain .txt files (preferably open them with notepad++) and a standard output dump (open this with a bash shell if the encodings look ugly to you) . This makes it easier to grep through or run other analysis tools to search for artifacts. The second collection folder actually contains important files that were collected from the host like conf-files, etc-files, files with POSIX capabilities, history files, sgid and suid files.
+The output from the first collection is collected in folders that contain .txt files (preferably open them with notepad++) and a standard output dump (open this with a bash shell if the encodings look ugly to you) . This makes it easier to grep through or run other analysis tools to search for artifacts. The second collection folder actually contains important files that were collected from the host like conf-files, etc-files, files with POSIX capabilities, history files, sgid and suid files.<br/> <br/>
 
 
 ## Deep Dives
