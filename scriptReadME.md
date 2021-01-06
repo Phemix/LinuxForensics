@@ -1,1 +1,0 @@
-# Linux Artufacts Collections Script
