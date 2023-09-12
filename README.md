@@ -17,8 +17,7 @@ The output from the first collection (*'Linux-IR-date-hostname'*) is collected i
 
 The second collection folder (*'Linux-IR-Enumeration-FileExports-hostname-date'*) contains important files that were collected from the host like conf-files, etc-files, files with POSIX capabilities, history files, sgid and suid files.<br/> <br/>
 
-## File Collection and NAS 
-The zip file collected in the /tmp folder will be moved to the prod server (wpplsec002.supervalu.com - 10.52.152.192) using SCP. From the prod server, a mount will be made to ctdayfs010b.unfi.com -10.1.112.44 (specifically ctdayfs010b:/dfir_ir) using NFS. A service account or SSH keys will be used for this purpose when it finally gets figured out.<br/> <br/>
+
 
 ## Deep Dives
 This section is dedicated into making deep dives into different collection artifacts and how to understand them better. The linear concepts will be skipped, and only the concepts that are considered a little more technical will be addressed. Some external resources will be provided to keep this section as less crowded as possible. The documentation will try to include links that describe the concepts that are not particularly common.
